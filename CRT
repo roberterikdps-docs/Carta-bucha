@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carta Romântica Interativa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --red: #b91c1c;
+      --black: #111;
+      --paper: #fff5e1;
+      --ink: #1b1b1b;
+      --shadow: 0 20px 50px rgba(0,0,0,.5);
+    }
+    body{
+      margin:0; height:100%; display:grid; place-items:center;
+      background: radial-gradient(circle at center, #000 0%, #1b1b1b 60%, #2d2d2d 100%);
+      font-family: 'Great Vibes', cursive;
+    }
+
+    .scene{ position:relative; width:min(92vw, 560px); aspect-ratio: 4/3; display:grid; place-items:center; }
+
+    .envelope-wrapper{ position:relative; width: clamp(300px, 80%, 400px); aspect-ratio:3/4; perspective: 1600px; filter: drop-shadow(var(--shadow)); }
+    .envelope{ position:absolute; inset:0; border-radius: 14px; background: linear-gradient(180deg, var(--red) 0%, #7f1d1d 100%); overflow:hidden; }
+
+    .flap{ position:absolute; top:0; left:0; right:0; height:60%; background: var(--red);
+      clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top center;
+      transition: transform 1.4s ease-in-out; }
+
+    .pocket-left,.pocket-right{ position:absolute; bottom:0; width:50%; height:58%; background: var(--red); }
+    .pocket-left{ left:0; clip-path: polygon(0 0, 100% 100%, 0 100%); border-bottom-left-radius:14px; }
+    .pocket-right{ right:0; clip-path: polygon(0 0, 100% 0, 100% 100%); border-bottom-right-radius:14px; }
+
+    .letter{
+      position:absolute; left:50%; top:0%;
+      width: clamp(200px, 70%, 260px);
+      aspect-ratio: 210 / 297;
+      background: var(--paper); border-radius: 10px; padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      font-family: 'Great Vibes', cursive; font-size:22px; line-height:1.6; color: var(--ink);
+      transform: translate(-50%, 100%) rotateX(10deg);
+      transform-origin: top center; opacity:0;
+      transition: transform 1.4s ease-in-out, opacity 1.2s ease-in-out;
+      z-index:1;
+    }
+
+    .seal {
+      position:absolute;
+      top:10%; left:50%; transform:translateX(-50%);
+      font-size:48px; color: rgba(255,255,255,0.6);
+      pointer-events:none;
+      z-index:0;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); opacity:0.6; }
+      50% { transform: translateX(-50%) scale(1.1); opacity:1; }
+    }
+
+    .open .flap{ transform: rotateX(180deg); }
+    .open .letter{ opacity:1; transform: translate(-50%, -10%) rotateX(0deg); }
+
+    .open-btn{
+      position:absolute;
+      top:0; left:0; right:0;
+      height:60%; /* cobre apenas a aba superior */
+      background:none; border:0; cursor:pointer; z-index:2;
+    }
+
+    .to-line{ font-size:28px; margin-bottom:20px; text-align:center; font-weight:bold; color: var(--red); }
+    .msg{ font-size:22px; white-space:pre-line; }
+    .cta{ display:block; margin-top:20px; text-align:center; font-weight:bold; font-size:30px; color:var(--red); text-shadow:0 0 6px black; }
+
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="envelope-wrapper" id="envelope">
+      <div class="envelope">
+        <div class="flap"></div>
+        <div class="pocket-left"></div>
+        <div class="pocket-right"></div>
+        <div class="seal">R</div>
+        <div class="letter">
+          <div class="to-line">Para minha buchinha</div>
+          <div class="msg">
+Assim como golzinho rebaixado, eu vejo beleza e charme em você.
+Sua determinação e coragem, me lembra de um Yanomami no rio Amazonas caçando Pacu, sua alegria e senso de humor, lembra do Léo Lins, após ser intimado pela justiça.
+Suas qualidades e sua personalidade, vai além do que você pode imaginar, você não consegue ver o quão incrível que você é por conta que está além do que seus olhos chineses podem ver.
+Você é tipo o Bolsonaro pescando peixe, Lula abraçando Alckmin ou Zelensky no avião de latão.
+Você é Camumile Bananine, a garota mais linda, bucha, fofa, linda e maravilhosa de Sarandi.
+Com tudo isso eu pergunto…
+          </div>
+          <div class="cta">Você quer sair comigo?</div>
+        </div>
+      </div>
+      <button class="open-btn" aria-label="Abrir envelope"></button>
+    </div>
+  </div>
+
+  <!-- Áudio do efeito -->
+  <audio id="open-sound" src="envelope.mp3" preload="auto"></audio>
+
+  <script>
+    const wrapper = document.getElementById('envelope');
+    const btn = wrapper.querySelector('.open-btn');
+    const sound = document.getElementById('open-sound');
+
+    btn.addEventListener('click', ()=> {
+      wrapper.classList.toggle('open');
+      sound.currentTime = 0; // reinicia o áudio se clicar várias vezes
+      sound.play();
+    });
+  </script>
+</body>
+</html>
