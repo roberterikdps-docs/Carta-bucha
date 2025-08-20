@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carta Interativa – Envelope</title>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --env-w: clamp(320px, 56vw, 520px);
+      --env-ratio: 0.62;                 /* mantém envelope retangular deitado */
+      --env-h: calc(var(--env-w) * var(--env-ratio));
+      --red: #b00010; --red-dark:#6d000a; --black:#0e0e0f;
+      --line: 30px;                      /* espaçamento entre linhas do papel */
+      --offset: 18px;                    /* ajuste fino p/ alinhar 1ª linha ao texto */
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{ margin:0; display:grid; place-items:center; background:#111; color:#111; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+
+    /* Palco */
+    .stage{ position:relative; width:var(--env-w); height:var(--env-h); }
+
+    /* ENVELOPE */
+    .envelope{ all:unset; position:absolute; inset:0; border-radius:12px; cursor:pointer; overflow:hidden; display:block;
+      box-shadow: 0 18px 32px rgba(0,0,0,.55);
+      background: linear-gradient(135deg, var(--black) 0 8%, var(--red-dark) 8% 12%, var(--red) 12% 88%, var(--red-dark) 88% 92%, var(--black) 92%);
+    }
+    .flap{ position:absolute; inset:0 0 50% 0; transform-origin:50% 0%;
+      background: linear-gradient(#0006,#0000), linear-gradient(135deg, var(--red) 0 86%, var(--red-dark) 86%);
+      clip-path: polygon(0 0,100% 0,50% 100%);
+      transition: transform .8s cubic-bezier(.2,.7,.2,1);
+      z-index:2;
+    }
+    .pocket{ position:absolute; inset:50% 0 0 0; border-top:2px solid #000; background: linear-gradient(135deg, var(--red-dark), var(--red)); }
+    .seal{ position:absolute; left:50%; top:52%; transform:translate(-50%,-50%); width:72px; height:72px; border-radius:50%; z-index:3;
+      background: radial-gradient(circle at 45% 35%, #e8d7b0 0 24%, #c9b173 24% 37%, #9f7e34 37% 62%, #6d4f1a 62% 100%);
+      border:3px solid #0b0b0b; box-shadow:0 6px 0 #5a4619, 0 16px 22px rgba(0,0,0,.55); display:grid; place-items:center;
+      transition: opacity .5s ease .15s, transform .5s ease .15s;
+      font-family: Georgia, serif; font-weight:700; font-size:34px; color:#111; text-shadow:0 1px 0 #fff7;
+    }
+
+    /* CARTA – overlay fixo (fora do envelope) */
+    .backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.55); opacity:0; pointer-events:none; transition:opacity .35s ease; }
+    .letter{ position:fixed; left:50%; top:50%; transform:translate(var(--start-x, -50%), var(--start-y, -50%)) scale(.86);
+      width:min(86vw, 700px); height:min(76vh, 720px); border:2px solid #111; border-radius:10px; background:#fff; overflow:hidden; z-index:30;
+      box-shadow:0 24px 44px rgba(0,0,0,.6); opacity:0; pointer-events:none; transition: left .7s ease, top .7s ease, transform .7s ease, opacity .4s ease;
+    }
+
+    /* Área rolável do papel */
+    .paper{ position:absolute; inset:0; overflow:auto; padding: var(--offset) 28px 28px 28px; }
+    /* Papel com linhas (alinháveis) + leve textura */
+    .paper::before{ content:""; position:absolute; inset:0; z-index:-1; background:
+      repeating-linear-gradient(to bottom, #0000 0 calc(var(--line) - 1px), #cfd5da calc(var(--line) - 1px) var(--line)),
+      radial-gradient(140% 80% at 50% 0%, #fff 0%, #f5f7fa 70%, #eef1f4 100%);
+      /* Desloca as linhas para casar com o padding-top */
+      background-position: 0 calc(-1 * var(--offset)), 0 0;
+    }
+    .paper::after{ content:""; position:absolute; inset:10px; border:2px solid #111; border-radius:6px; pointer-events:none; }
+
+    /* Tipografia e alinhamento com linhas */
+    .title{ font-family:'Caveat', cursive; font-weight:700; font-size:clamp(30px,4.6vw,56px); color:#d20f1f; text-align:center; margin:0 0 calc(var(--line) * .6); }
+    .hand{ font-family:'Caveat', cursive; font-size:clamp(18px,2.6vw,28px); line-height: var(--line); color:#1a1a1a; white-space:pre-line; margin:0 0 var(--line); }
+    .ask{ font-family:'Caveat', cursive; font-weight:700; font-size:clamp(30px,5.4vw,64px); color:#d20f1f; text-align:center; margin: calc(var(--line) * .8) 0 6px; line-height:1.3; }
+
+    /* Estados ABERTO */
+    .open .flap{ transform: rotateX(178deg); }
+    .open .seal{ opacity:0; transform: translate(-50%,-50%) scale(.9); }
+
+    .show .backdrop{ opacity:1; pointer-events:auto; }
+    .show .letter{ opacity:1; pointer-events:auto; left:50%; top:50%; transform:translate(-50%, -50%) scale(1); }
+
+    /* Botão fechar */
+    .close{ position:absolute; right:10px; top:8px; border:none; background:#0000; font-size:28px; line-height:1; cursor:pointer; color:#333; }
+    .close:focus-visible{ outline:3px dashed #d20f1f; border-radius:8px; }
+
+    /* Scrollbar sutil */
+    .paper{ scrollbar-width: thin; scrollbar-color: #b6b6b6 #f1f1f1; }
+    .paper::-webkit-scrollbar{ width:10px }
+    .paper::-webkit-scrollbar-track{ background:#f1f1f1 }
+    .paper::-webkit-scrollbar-thumb{ background:#b6b6b6; border-radius:8px }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <button id="envelope" class="envelope" aria-label="Abrir carta">
+      <div class="flap" aria-hidden="true"></div>
+      <div class="pocket" aria-hidden="true"></div>
+      <div class="seal" aria-hidden="true">R</div>
+    </button>
+  </div>
+
+  <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+  <div id="letter" class="letter" role="dialog" aria-modal="true" aria-hidden="true">
+    <button class="close" id="close" title="Fechar">×</button>
+    <div class="paper">
+      <h1 class="title">Para minha buchinha</h1>
+      <p class="hand">Assim como golzinho rebaixado, eu vejo beleza e charme em voce. Sua determinaçao e coragem, me lembra de um Yanomami no rio amazonas caçando Pacu, sua alegria e senso de humor, lembra do Leo lins, apos ser intimado pela justiça. Suas qualidades e sua personalidade, vai alem do que voce pode imaginar, voce nao consegue ver o quao incrivel que voce e por conta que esta alem que seus olhos chineses pode ver. Voce e tipo que o bolsonaro pescando peixe, Lula abraçando alkimin ou zelenks no aviao de latao, Voce é Camumile Bananine a garota mais linda, bucha, fofa, linda e maravilhosa de sarandi, com tudo isso eu pergunto...</p>
+      <div class="ask">Você quer sair comigo?</div>
+    </div>
+  </div>
+
+  <script>
+    const env = document.getElementById('envelope');
+    const letter = document.getElementById('letter');
+    const backdrop = document.getElementById('backdrop');
+    const closeBtn = document.getElementById('close');
+
+    function computeStart(){
+      // ponto de origem (boca do envelope)
+      const r = env.getBoundingClientRect();
+      const startX = (r.left + r.width/2) - window.innerWidth/2;
+      const startY = (r.top + r.height*0.55) - window.innerHeight/2;
+      letter.style.setProperty('--start-x', `${startX}px`);
+      letter.style.setProperty('--start-y', `${startY}px`);
+    }
+
+    function openLetter(){
+      computeStart();
+      env.classList.add('open');
+      document.body.classList.add('show');
+      letter.setAttribute('aria-hidden','false');
+      backdrop.setAttribute('aria-hidden','false');
+    }
+
+    function closeLetter(){
+      document.body.classList.remove('show');
+      env.classList.remove('open');
+      letter.setAttribute('aria-hidden','true');
+      backdrop.setAttribute('aria-hidden','true');
+    }
+
+    env.addEventListener('click', openLetter);
+    closeBtn.addEventListener('click', closeLetter);
+    backdrop.addEventListener('click', closeLetter);
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeLetter(); });
+    window.addEventListener('resize', ()=>{ if(document.body.classList.contains('show')) computeStart(); });
+  </script>
+</body>
+</html>
